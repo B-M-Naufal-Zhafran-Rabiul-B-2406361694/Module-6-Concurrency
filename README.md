@@ -31,3 +31,12 @@ Pada Milestone ini, kode telah direfaktor untuk memisahkan antara logika pengece
 3. **Pemisahan Respons**: Dengan cara ini, struktur respons (format HTTP) tetap konsisten, hanya konten dan statusnya saja yang berubah secara dinamis berdasarkan input user.
 
 ![Commit 3 screen capture](commit3.png)
+
+
+## Commit 4 Reflection notes
+
+Pada Milestone ini, saya mensimulasikan respons lambat untuk memahami keterbatasan server *single-threaded*:
+
+1. **Simulasi `/sleep`**: Dengan menggunakan `thread::sleep(Duration::from_secs(10))`, server dipaksa berhenti bekerja selama 10 detik sebelum memproses respons.
+2. **Masalah Blocking**: Karena server ini berjalan pada satu *thread* tunggal, ia hanya bisa memproses satu permintaan dalam satu waktu. Ketika permintaan `/sleep` masuk, seluruh proses server tertahan (*blocked*). Akibatnya, permintaan lain yang masuk (bahkan yang seharusnya cepat seperti `/`) harus mengantri sampai permintaan sebelumnya selesai diproses.
+3. **Dampak Real-world**: Dalam kondisi nyata, jika satu pengguna memicu proses yang berat (seperti pengolahan data besar), pengguna lain tidak akan bisa mengakses website sama sekali. Hal ini menunjukkan perlunya mekanisme *multi-threading* atau *thread pool* untuk menangani banyak permintaan secara paralel.
