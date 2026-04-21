@@ -20,3 +20,14 @@ Pada Milestone ini, fungsi `handle_connection` dimodifikasi untuk mengirimkan re
 5. **`stream.write_all`**: Mengonversi string respons menjadi *bytes* dan mengirimkannya melalui *socket* ke browser.
 
 ![Commit 2 screen capture](commit2.png)
+
+
+## Commit 3 Reflection notes
+
+Pada Milestone ini, kode telah direfaktor untuk memisahkan antara logika pengecekan request dan pembuatan respons. 
+
+1. **Refactoring**: Alih-alih menggunakan blok `if/else` yang mengulang kode `fs::read_to_string` dan `stream.write_all`, saya menggunakan `if/else` sebagai *expression* untuk menentukan `status_line` dan `filename`. Hal ini membuat kode lebih *DRY (Don't Repeat Yourself)*, lebih bersih, dan lebih mudah dipelihara.
+2. **Validasi Request**: Server sekarang hanya akan memberikan halaman utama jika `request_line` bernilai tepat `"GET / HTTP/1.1"`. Jika user meminta path lain, server secara eksplisit mengirimkan status `404 NOT FOUND`.
+3. **Pemisahan Respons**: Dengan cara ini, struktur respons (format HTTP) tetap konsisten, hanya konten dan statusnya saja yang berubah secara dinamis berdasarkan input user.
+
+![Commit 3 screen capture](commit3.png)
