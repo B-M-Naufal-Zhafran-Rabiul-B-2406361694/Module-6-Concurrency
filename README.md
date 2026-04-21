@@ -41,6 +41,7 @@ Pada Milestone ini, saya mensimulasikan respons lambat untuk memahami keterbatas
 2. **Masalah Blocking**: Karena server ini berjalan pada satu *thread* tunggal, ia hanya bisa memproses satu permintaan dalam satu waktu. Ketika permintaan `/sleep` masuk, seluruh proses server tertahan (*blocked*). Akibatnya, permintaan lain yang masuk (bahkan yang seharusnya cepat seperti `/`) harus mengantri sampai permintaan sebelumnya selesai diproses.
 3. **Dampak Real-world**: Dalam kondisi nyata, jika satu pengguna memicu proses yang berat (seperti pengolahan data besar), pengguna lain tidak akan bisa mengakses website sama sekali. Hal ini menunjukkan perlunya mekanisme *multi-threading* atau *thread pool* untuk menangani banyak permintaan secara paralel.
 
+
 ## Commit 5 Reflection notes
 
 Pada Milestone ini, saya mengimplementasikan `ThreadPool` untuk meningkatkan *throughput* server:
@@ -48,3 +49,12 @@ Pada Milestone ini, saya mengimplementasikan `ThreadPool` untuk meningkatkan *th
 1. **Ide Utama**: Dibandingkan membuat thread baru tanpa batas untuk setiap koneksi (yang berisiko membanjiri sumber daya sistem), `ThreadPool` mengelola sejumlah thread yang sudah ditentukan sejak awal (dalam hal ini 4).
 2. **Penggunaan `Arc<Mutex<T>>`**: Karena ujung penerima (*Receiver*) pada channel Rust bersifat *Single Consumer*, saya menggunakan `Arc` (Atomic Reference Counting) agar *receiver* dapat dimiliki oleh banyak `Worker`, dan `Mutex` untuk memastikan hanya satu `Worker` yang mengambil satu pekerjaan dalam satu waktu agar tidak terjadi *race condition*.
 3. **Mekanisme Kerja**: Saat ada koneksi baru, `ThreadPool` akan mengirimkan tugas melalui *channel*. Salah satu `Worker` yang sedang menganggur akan mengambil tugas tersebut, menjalankannya, dan kembali menunggu tugas baru setelah selesai. Hal ini memungkinkan akses ke `/` tetap cepat meskipun ada user lain yang sedang mengakses `/sleep`.
+
+
+## Commit Bonus Reflection notes
+
+Saya melakukan perbaikan pada cara pembuatan `ThreadPool` dengan menambahkan fungsi `build` sebagai alternatif dari `new`:
+
+1. **Perbedaan `new` vs `build`**: Fungsi `new` biasanya digunakan oleh konvensi Rust untuk inisialisasi yang diasumsikan tidak akan gagal. Namun, jika ada input yang tidak valid (seperti `size = 0`), `new` akan memicu `panic!`. Sebaliknya, fungsi `build` mengembalikan tipe `Result<ThreadPool, PoolCreationError>`.
+2. **Keuntungan `Result`**: Dengan mengembalikan `Result`, kita memberikan kendali penuh kepada pemanggil fungsi (*caller*) untuk menangani error secara elegan (misal: memberikan pesan error yang ramah user) daripada membiarkan seluruh program berhenti mendadak.
+3. **Robustness**: Pola ini membuat kode lebih tangguh dan sesuai dengan filosofi penanganan error di Rust yang eksplisit.
