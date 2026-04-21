@@ -40,3 +40,11 @@ Pada Milestone ini, saya mensimulasikan respons lambat untuk memahami keterbatas
 1. **Simulasi `/sleep`**: Dengan menggunakan `thread::sleep(Duration::from_secs(10))`, server dipaksa berhenti bekerja selama 10 detik sebelum memproses respons.
 2. **Masalah Blocking**: Karena server ini berjalan pada satu *thread* tunggal, ia hanya bisa memproses satu permintaan dalam satu waktu. Ketika permintaan `/sleep` masuk, seluruh proses server tertahan (*blocked*). Akibatnya, permintaan lain yang masuk (bahkan yang seharusnya cepat seperti `/`) harus mengantri sampai permintaan sebelumnya selesai diproses.
 3. **Dampak Real-world**: Dalam kondisi nyata, jika satu pengguna memicu proses yang berat (seperti pengolahan data besar), pengguna lain tidak akan bisa mengakses website sama sekali. Hal ini menunjukkan perlunya mekanisme *multi-threading* atau *thread pool* untuk menangani banyak permintaan secara paralel.
+
+## Commit 5 Reflection notes
+
+Pada Milestone ini, saya mengimplementasikan `ThreadPool` untuk meningkatkan *throughput* server:
+
+1. **Ide Utama**: Dibandingkan membuat thread baru tanpa batas untuk setiap koneksi (yang berisiko membanjiri sumber daya sistem), `ThreadPool` mengelola sejumlah thread yang sudah ditentukan sejak awal (dalam hal ini 4).
+2. **Penggunaan `Arc<Mutex<T>>`**: Karena ujung penerima (*Receiver*) pada channel Rust bersifat *Single Consumer*, saya menggunakan `Arc` (Atomic Reference Counting) agar *receiver* dapat dimiliki oleh banyak `Worker`, dan `Mutex` untuk memastikan hanya satu `Worker` yang mengambil satu pekerjaan dalam satu waktu agar tidak terjadi *race condition*.
+3. **Mekanisme Kerja**: Saat ada koneksi baru, `ThreadPool` akan mengirimkan tugas melalui *channel*. Salah satu `Worker` yang sedang menganggur akan mengambil tugas tersebut, menjalankannya, dan kembali menunggu tugas baru setelah selesai. Hal ini memungkinkan akses ke `/` tetap cepat meskipun ada user lain yang sedang mengakses `/sleep`.
